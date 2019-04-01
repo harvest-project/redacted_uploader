@@ -13,6 +13,10 @@ from upload_studio.utils import list_src_dst_files
 logger = get_logger(__name__)
 
 
+def _has_surronding_spaces(s):
+    return s != s.strip()
+
+
 class RedactedTorrentSourceExecutor(RedactedStepExecutorMixin, StepExecutor):
     name = 'redacted_torrent_source'
     description = 'Source data from Redacted torrent {source_torrent.torrent_info.tracker_id}.'
@@ -45,6 +49,12 @@ class RedactedTorrentSourceExecutor(RedactedStepExecutorMixin, StepExecutor):
             self.add_warning('Attention: source torrent is scene.')
         if self.red_torrent['reported']:
             self.add_warning('Source torrent is reported.')
+        if _has_surronding_spaces(self.red_torrent['remasterTitle']):
+            self.add_warning('Edition title has leading or trailing spaces. Fix manually now or after upload.')
+        if _has_surronding_spaces(self.red_torrent['remasterRecordLabel']):
+            self.add_warning('Edition record label has leading or trailing spaces. Fix manually now or after upload.')
+        if _has_surronding_spaces(self.red_torrent['remasterCatalogueNumber']):
+            self.add_warning('Edition catalog number has leading or trailing spaces. Fix manually now or after upload.')
 
     def copy_source_files(self):
         download_path = os.path.join(self.torrent.download_path, self.torrent.name)
