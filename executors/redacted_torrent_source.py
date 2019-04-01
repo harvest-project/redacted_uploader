@@ -6,7 +6,6 @@ from Harvest.utils import get_logger
 from plugins.redacted.models import RedactedTorrentGroup
 from plugins.redacted_uploader.executors.utils import RedactedStepExecutorMixin
 from torrents.add_torrent import fetch_torrent
-from torrents.models import Torrent
 from upload_studio.step_executor import StepExecutor
 from upload_studio.upload_metadata import MusicMetadata
 from upload_studio.utils import list_src_dst_files
@@ -16,11 +15,10 @@ logger = get_logger(__name__)
 
 class RedactedTorrentSourceExecutor(RedactedStepExecutorMixin, StepExecutor):
     name = 'redacted_torrent_source'
-    description = 'Source data from Redacted torrent {tracker_id}.'
+    description = 'Source data from Redacted torrent {source_torrent.torrent_info.tracker_id}.'
 
-    def __init__(self, *args, tracker_id, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.tracker_id = tracker_id
 
         self.torrent = None
         self.torrent_info = None
@@ -29,21 +27,24 @@ class RedactedTorrentSourceExecutor(RedactedStepExecutorMixin, StepExecutor):
         self.source_path = None
 
     def fetch_torrent(self):
-        logger.info('Project {} fetching Redacted torrent {}.', self.project.id, self.tracker_id)
-        self.torrent = Torrent.objects.get(
-            realm=self.realm,
-            torrent_info__tracker_id=self.tracker_id,
-        )
-        self.torrent_info = fetch_torrent(self.realm, self.tracker, self.tracker_id, force_fetch=False)
+        if not self.project.source_torrent:
+            self.raise_error('source_torrent is NULL, but it is required for redacted_torrent_source.')
+        self.torrent = self.project.source_torrent
+        tracker_id = self.torrent.torrent_info.tracker_id
+
+        logger.info('Project {} fetching Redacted torrent {}.', self.project.id, tracker_id)
+        self.torrent_info = fetch_torrent(self.realm, self.tracker, tracker_id, force_fetch=False)
         if self.torrent_info.is_deleted:
             self.add_warning('Torrent already deleted at Redacted. Unable to refresh metadata.')
         red_data = json.loads(bytes(self.torrent_info.raw_response).decode())
         self.red_group = red_data['group']
         self.red_torrent = red_data['torrent']
 
-    def check_scene(self):
+    def check_source_warnings(self):
         if self.red_torrent['scene']:
             self.add_warning('Attention: source torrent is scene.')
+        if self.red_torrent['reported']:
+            self.add_warning('Source torrent is reported.')
 
     def copy_source_files(self):
         download_path = os.path.join(self.torrent.download_path, self.torrent.name)
@@ -89,15 +90,14 @@ class RedactedTorrentSourceExecutor(RedactedStepExecutorMixin, StepExecutor):
             encoding=self.red_torrent['encoding'],
 
             additional_data={
-                'source_group_id': self.red_group['id'],
-                'source_torrent_id': self.red_torrent['id'],
+                'source_red_group': self.red_group,
+                'source_red_torrent': self.red_torrent,
             }
         )
 
     def handle_run(self):
-        self.clean_work_area()
         self.fetch_torrent()
-        self.check_scene()
+        self.check_source_warnings()
         self.raise_warnings()
         self.copy_source_files()
         self.init_metadata()
