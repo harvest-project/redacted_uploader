@@ -79,12 +79,11 @@ class RedactedTorrentSourceExecutor(RedactedStepExecutorMixin, StepExecutor):
 
         logger.debug('{} discovered {} source audio files.', self.project, num_audio_files)
         if num_audio_files == 0:
-            self.raise_error('{}: no audio files discovered in source directory.'.format(self.project))
+            self.raise_error('No audio files discovered in source directory {}.'.format(download_path))
         elif num_audio_files == 1:
             allowed_types = {RedactedTorrentGroup.RELEASE_TYPE_SINGLE, RedactedTorrentGroup.RELEASE_TYPE_MIXTAPE}
             if self.red_group['releaseType'] not in allowed_types:
-                self.add_warning('{}: single audio file torrent with a type that is not single or mixtape.'.format(
-                    self.project))
+                self.add_warning('Single audio file torrent with a type that is not single or mixtape.')
 
     def init_metadata(self):
         logger.debug('Project {} initializing metadata from Redacted torrent.', self.project)
