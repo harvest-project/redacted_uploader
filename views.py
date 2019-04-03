@@ -4,6 +4,7 @@ from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from Harvest.utils import CORSBrowserExtensionView
 from plugins.redacted.client import RedactedClient
 from plugins.redacted.tracker import RedactedTrackerPlugin
 from plugins.redacted.utils import get_shorter_joined_artists
@@ -21,7 +22,7 @@ from upload_studio.serializers import ProjectDeepSerializer
 from upload_studio.tasks import project_run_all
 
 
-class TranscodeTorrent(APIView):
+class TranscodeTorrent(CORSBrowserExtensionView, APIView):
     @transaction.atomic
     def post(self, request):
         tracker_id = int(request.data['tracker_id'])
