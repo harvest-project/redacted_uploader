@@ -2,13 +2,13 @@ import json
 import os
 import shutil
 
+from Harvest.path_utils import list_src_dst_files
 from Harvest.utils import get_logger
 from plugins.redacted.models import RedactedTorrentGroup
 from plugins.redacted_uploader.executors.utils import RedactedStepExecutorMixin
 from torrents.add_torrent import fetch_torrent
 from upload_studio.step_executor import StepExecutor
 from upload_studio.upload_metadata import MusicMetadata
-from upload_studio.utils import list_src_dst_files
 
 logger = get_logger(__name__)
 

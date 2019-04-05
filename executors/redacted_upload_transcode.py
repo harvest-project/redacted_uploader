@@ -1,13 +1,13 @@
 import os
 import time
 
+from Harvest.path_utils import copytree_into
 from Harvest.utils import get_logger
 from plugins.redacted.exceptions import RedactedUploadException, RedactedException
 from plugins.redacted_uploader.executors.utils import RedactedStepExecutorMixin
 from torrents import add_torrent
 from upload_studio.step_executor import StepExecutor
 from upload_studio.upload_metadata import MusicMetadata
-from upload_studio.utils import copytree_into
 
 logger = get_logger(__name__)
 

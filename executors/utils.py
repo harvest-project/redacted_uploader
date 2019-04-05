@@ -2,12 +2,12 @@ import os
 
 import mutagen
 
+from Harvest.path_utils import list_abs_files
 from Harvest.utils import get_logger
 from plugins.redacted.client import RedactedClient
 from plugins.redacted.tracker import RedactedTrackerPlugin
 from torrents.models import Realm
 from trackers.registry import TrackerRegistry
-from upload_studio.utils import list_abs_files
 
 logger = get_logger(__name__)
 

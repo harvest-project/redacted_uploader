@@ -1,11 +1,11 @@
 import mutagen.easyid3
 import mutagen.flac
 
+from Harvest.path_utils import list_rel_files
 from plugins.redacted_uploader.executors.utils import RedactedStepExecutorMixin, shorten_filename_if_necessary
 from plugins.redacted_uploader.torrent_name import get_torrent_name_for_upload
 from upload_studio.step_executor import StepExecutor
 from upload_studio.upload_metadata import MusicMetadata
-from upload_studio.utils import list_rel_files
 
 
 def _try_parse(value):

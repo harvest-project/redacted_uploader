@@ -1,8 +1,8 @@
 import html
 
+from Harvest.path_utils import strip_invalid_path_characters
 from plugins.redacted.utils import get_shorter_joined_artists
 from upload_studio.upload_metadata import MusicMetadata
-from upload_studio.utils import strip_invalid_path_characters
 
 ENCODING_NAME_MAP = {
     MusicMetadata.ENCODING_192: '192',
