@@ -17,6 +17,7 @@ from trackers.registry import TrackerRegistry
 from upload_studio.executors.create_torrent_file import CreateTorrentFileExecutor
 from upload_studio.executors.finish_upload import FinishUploadExecutor
 from upload_studio.executors.lame_transcode import LAMETranscoderExecutor
+from upload_studio.executors.sox_process import SoxProcessExecutor
 from upload_studio.models import Project, ProjectStep
 from upload_studio.serializers import ProjectDeepSerializer
 from upload_studio.tasks import project_run_all
@@ -65,6 +66,14 @@ class TranscodeTorrent(CORSBrowserExtensionView, APIView):
         )
         project.steps.append(ProjectStep(
             executor_name=RedactedTorrentSourceExecutor.name,
+        ))
+        project.steps.append(ProjectStep(
+            executor_name=SoxProcessExecutor.name,
+            executor_kwargs={
+                'target_sample_rate': SoxProcessExecutor.TARGET_SAMPLE_RATE_44100_OR_4800,
+                'target_bits_per_sample': 16,
+                'target_channels': 2,
+            },
         ))
         project.steps.append(ProjectStep(
             executor_name=LAMETranscoderExecutor.name,
