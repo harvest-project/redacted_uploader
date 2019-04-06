@@ -167,8 +167,12 @@ class RedactedUploadTranscodeExecutor(RedactedStepExecutorMixin, StepExecutor):
             os.makedirs(area, exist_ok=True)
             with open(os.path.join(area, 'redacted_upload.html'), 'w') as f:
                 f.write(exc.raw_response)
-            self.add_warning('Error uploading to Redacted: {}. HTML error file saved to redacted_error.'.format(
-                exc.parsed_error))
+            # If this warning is not acked, a potentially uploaded torrent could be uploaded again.
+            self.add_warning(
+                'Error uploading to Redacted: {}. HTML error file saved to redacted_error.'.format(
+                    exc.parsed_error),
+                acked=True
+            )
 
     def discover_torrent(self):
         for _ in range(3):
