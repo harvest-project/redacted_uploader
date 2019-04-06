@@ -15,6 +15,16 @@ def _try_parse(value):
         return value
 
 
+def _extract_numnber_from_tag_value(value):
+    if isinstance(value, list):
+        value = value[0]
+    if isinstance(value, int):
+        return value
+    if not isinstance(value, str):
+        raise ValueError()
+    return _try_parse(value.split('/')[0])
+
+
 class RedactedCheckFileTags(RedactedStepExecutorMixin, StepExecutor):
     name = 'redacted_check_file_tags'
     description = 'Check the tags of audio files for Redacted upload.'
@@ -40,22 +50,20 @@ class RedactedCheckFileTags(RedactedStepExecutorMixin, StepExecutor):
         disc_src = tags.get('discnumber') or tags.get('disc')
         if disc_src is None:
             audio_file.disc = 1
-        elif isinstance(disc_src, str):
-            audio_file.disc = _try_parse(disc_src.split('/')[0])
-        elif isinstance(disc_src, list):
-            audio_file.disc = _try_parse(disc_src[0])
         else:
-            self.raise_error('Unable to read disc_src {}.'.format(disc_src))
+            try:
+                audio_file.disc = _extract_numnber_from_tag_value(disc_src)
+            except ValueError:
+                self.raise_error('Unable to read disc_src {}.'.format(disc_src))
 
         track_src = tags.get('tracknumber') or tags.get('track')
         if track_src is None:
             self.raise_error('Missing track tag on {0}'.format(audio_file.file))
-        if isinstance(track_src, str):
-            audio_file.track = _try_parse(track_src.split('/')[0])
-        elif isinstance(track_src, list):
-            audio_file.track = _try_parse(track_src[0])
         else:
-            self.raise_error('Unable read track_src {}.'.format(track_src))
+            try:
+                audio_file.track = _extract_numnber_from_tag_value(track_src)
+            except ValueError:
+                self.raise_error('Unable read track_src {}.'.format(track_src))
 
     def check_tags(self):
         for audio_file in self.audio_files:
