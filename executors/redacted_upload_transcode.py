@@ -71,22 +71,19 @@ class RedactedUploadTranscodeExecutor(RedactedStepExecutorMixin, StepExecutor):
 
         is_inconsistent = (
                 downsample['dst_sample_rate'] != self.sample_rate or
-                downsample['channels'] != self.channels or
-                downsample['bits_per_sample'] != self.bits_per_sample
+                (self.bits_per_sample and downsample['dst_bits_per_sample'] != self.bits_per_sample) or
+                downsample['dst_channels'] != self.channels
         )
         if is_inconsistent:
             self.raise_error('Inconsistent downsample data and current file metadata.')
 
         changed_sample_rate = downsample['src_sample_rate'] != self.sample_rate
         changed_channels = downsample['src_channels'] != self.channels
-        changed_bits_per_sample = (
-                not self.metadata.format_is_lossy and
-                downsample['bits_per_sample'] != self.bits_per_sample
-        )
+        changed_bits_per_sample = self.bits_per_sample and downsample['src_bits_per_sample'] != self.bits_per_sample
         is_redbook = (
-                self.sample_rate == 44100 and
-                (self.metadata.format_is_lossy and self.bits_per_sample == 16) and
-                self.channels == 2
+                downsample['dst_sample_rate'] == 44100 and
+                downsample['dst_bits_per_sample'] == 16 and
+                downsample['dst_channels'] == 2
         )
 
         if changed_sample_rate and downsample['src_sample_rate'] < 88200:
@@ -97,7 +94,7 @@ class RedactedUploadTranscodeExecutor(RedactedStepExecutorMixin, StepExecutor):
                 self.raise_error('Non-redbook format CD sources are suspicious.')
             if changed_sample_rate or changed_channels or changed_bits_per_sample:
                 self.raise_error('Downmixing/resampling CD sources is prohibited.')
-        elif red_torrent['meida'] == MusicMetadata.MEDIA_WEB:
+        elif red_torrent['media'] == MusicMetadata.MEDIA_WEB:
             pass  # Downsampling from less than 88.2khz is already covered generally
         elif red_torrent['media'] == MusicMetadata.MEDIA_SACD:
             if changed_channels:
