@@ -85,7 +85,7 @@ class TranscodeTorrent(CORSBrowserExtensionView, APIView):
         project.steps.append(ProjectStep(
             executor_name=SoxProcessExecutor.name,
             executor_kwargs={
-                'target_sample_rate': 44100,
+                'target_sample_rate': SoxProcessExecutor.TARGET_SAMPLE_RATE_44100_OR_4800,
                 'target_bits_per_sample': 16,
                 'target_channels': 2,
             },
