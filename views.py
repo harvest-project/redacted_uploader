@@ -22,11 +22,25 @@ from upload_studio.models import Project, ProjectStep
 from upload_studio.serializers import ProjectDeepSerializer
 from upload_studio.tasks import project_run_all
 
+TRANSCODE_TYPE_MP3 = 'mp3'
+TRANSCODE_TYPE_REDBOOK_FLAC = 'redbook_flac'
+TRANSCODE_TYPES = {
+    TRANSCODE_TYPE_MP3,
+    TRANSCODE_TYPE_REDBOOK_FLAC,
+}
+
 
 class TranscodeTorrent(CORSBrowserExtensionView, APIView):
     @transaction.atomic
     def post(self, request):
         tracker_id = int(request.data['tracker_id'])
+        transcode_type = request.data['transcode_type']
+
+        if transcode_type not in TRANSCODE_TYPES:
+            raise APIException(
+                'Unknown transcode type. Supported types: {}'.format(TRANSCODE_TYPES),
+                code=status.HTTP_400_BAD_REQUEST,
+            )
 
         tracker = TrackerRegistry.get_plugin(RedactedTrackerPlugin.name, 'transcode_torrent')
         realm = Realm.objects.get(name=RedactedTrackerPlugin.name)
@@ -70,17 +84,18 @@ class TranscodeTorrent(CORSBrowserExtensionView, APIView):
         project.steps.append(ProjectStep(
             executor_name=SoxProcessExecutor.name,
             executor_kwargs={
-                'target_sample_rate': SoxProcessExecutor.TARGET_SAMPLE_RATE_44100_OR_4800,
+                'target_sample_rate': 44100,
                 'target_bits_per_sample': 16,
                 'target_channels': 2,
             },
         ))
-        project.steps.append(ProjectStep(
-            executor_name=LAMETranscoderExecutor.name,
-            executor_kwargs={
-                'bitrate': 'V0 (VBR)',
-            },
-        ))
+        if transcode_type == TRANSCODE_TYPE_MP3:
+            project.steps.append(ProjectStep(
+                executor_name=LAMETranscoderExecutor.name,
+                executor_kwargs={
+                    'bitrate': 'V0 (VBR)',
+                },
+            ))
         project.steps.append(ProjectStep(
             executor_name=RedactedCheckFileTags.name,
         ))
