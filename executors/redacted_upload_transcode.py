@@ -148,16 +148,25 @@ class RedactedUploadTranscodeExecutor(RedactedStepExecutorMixin, StepExecutor):
         logger.info('{} sending request for upload to Redacted.'.format(self.project))
 
         torrent_file = self._get_torrent_file()
-        release_desc = (
-            'Made with LAME 3.100 with -h using Harvest\'s Upload Studio from RED Torrent ID {0}.'
-            ' Resampling or bit depth change (if needed) was done using SoX.'
-        ).format(self.metadata.additional_data['source_red_torrent']['id'])
+
+        if self.metadata.format == MusicMetadata.FORMAT_MP3:
+            release_desc = (
+                'Made with LAME 3.100 with -h using Harvest\'s Upload Studio from RED Torrent ID {0}.'
+                ' Resampling or bit depth change (if needed) was done using SoX.'
+            ).format(self.metadata.additional_data['source_red_torrent']['id'])
+        elif self.metadata.format == MusicMetadata.FORMAT_FLAC:
+            release_desc = (
+                'Made using Harvest\'s Upload Studio from RED Torrent ID {0}.'
+                ' Resampling or bit depth change (if needed) was done using SoX.'
+            ).format(self.metadata.additional_data['source_red_torrent']['id'])
+        else:
+            self.raise_error('Cannot create description for format {}.'.format(self.metadata.format))
 
         payload = {
             'submit': 'true',
             'type': 'Music',
             'groupid': self.metadata.additional_data['source_red_group']['id'],
-            'format': 'MP3',
+            'format': self.metadata.format,
             'bitrate': self.metadata.encoding,
             'media': self.metadata.media,
             'release_desc': release_desc,
