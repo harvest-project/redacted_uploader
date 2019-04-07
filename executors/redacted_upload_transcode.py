@@ -53,15 +53,8 @@ class RedactedUploadTranscodeExecutor(RedactedStepExecutorMixin, StepExecutor):
         logger.info('{} detected stream settings {} / {} / {}.',
                     self.project, self.sample_rate, self.channels, self.bits_per_sample)
 
-    def check_prerequisites(self):
+    def check_downsampling_rules(self):
         red_torrent = self.metadata.additional_data['source_red_torrent']
-
-        is_preemphasized = (any(term in red_torrent['remasterTitle'].lower() for term in PRE_EMPHASIS_TERMS) or
-                            any(term in red_torrent['description'].lower() for term in PRE_EMPHASIS_TERMS))
-        if is_preemphasized:
-            self.add_warning('Source torrent looks like it might be pre-emphasized. De-emphasizing is not supported.'
-                             'Please check the source torrent and do it manually if needed.')
-
         downsample = self.metadata.additional_data.get('downsample_data')
         if not downsample:
             logger.info('Detected no downsampling.')
@@ -106,6 +99,25 @@ class RedactedUploadTranscodeExecutor(RedactedStepExecutorMixin, StepExecutor):
                 self.raise_error('Downmixing of Blu-Ray is prohibited.')
             if MusicMetadata.format_is_lossy and not is_redbook:
                 self.raise_error('Blu-Ray lossy data must be uploaded in redbook format.')
+
+    def check_metadata(self):
+        red_torrent = self.metadata.additional_data['source_red_torrent']
+
+        is_preemphasized = (any(term in red_torrent['remasterTitle'].lower() for term in PRE_EMPHASIS_TERMS) or
+                            any(term in red_torrent['description'].lower() for term in PRE_EMPHASIS_TERMS))
+        if is_preemphasized:
+            self.add_warning('Source torrent looks like it might be pre-emphasized. De-emphasizing is not supported.'
+                             'Please check the source torrent and do it manually if needed.')
+
+        if not self.metadata.edition_year:
+            self.add_warning('Metadata has empty year.')
+        has_any_edition_information = (
+                self.metadata.edition_title or
+                self.metadata.edition_record_label or
+                self.metadata.edition_catalog_number
+        )
+        if has_any_edition_information:
+            self.add_warning('Metadata has empty title/label/catalog number.')
 
     def detect_duplicates(self):
         red_group = self.client.get_torrent_group(self.metadata.additional_data['source_red_group']['id'])
@@ -202,7 +214,7 @@ class RedactedUploadTranscodeExecutor(RedactedStepExecutorMixin, StepExecutor):
         self.copy_prev_step_files()
         self.discover_audio_files()
         self.detect_stream_info()
-        self.check_prerequisites()
+        self.check_downsampling_rules()
         self.detect_duplicates()
         self.raise_warnings()
         self.upload_torrent()
