@@ -116,7 +116,7 @@ class RedactedUploadTranscodeExecutor(RedactedStepExecutorMixin, StepExecutor):
                 self.metadata.edition_record_label or
                 self.metadata.edition_catalog_number
         )
-        if has_any_edition_information:
+        if not has_any_edition_information:
             self.add_warning('Metadata has empty title/label/catalog number.')
 
     def detect_duplicates(self):
@@ -215,6 +215,7 @@ class RedactedUploadTranscodeExecutor(RedactedStepExecutorMixin, StepExecutor):
         self.discover_audio_files()
         self.detect_stream_info()
         self.check_downsampling_rules()
+        self.check_metadata()
         self.detect_duplicates()
         self.raise_warnings()
         self.upload_torrent()
