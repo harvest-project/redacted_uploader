@@ -36,6 +36,9 @@ class RedactedTorrentSourceExecutor(RedactedStepExecutorMixin, StepExecutor):
         self.torrent = self.project.source_torrent
         tracker_id = self.torrent.torrent_info.tracker_id
 
+        if self.torrent.progress != 1:
+            self.raise_error('Source torrent is not 100% complete.')
+
         logger.info('Project {} fetching Redacted torrent {}.', self.project.id, tracker_id)
         self.torrent_info = fetch_torrent(self.realm, self.tracker, tracker_id, force_fetch=False)
         if self.torrent_info.is_deleted:
