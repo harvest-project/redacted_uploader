@@ -1,3 +1,5 @@
+import html
+
 from django.core.management import BaseCommand
 
 from plugins.redacted.models import RedactedTorrent
@@ -13,10 +15,10 @@ from upload_studio.models import Project
 class Command(BaseCommand):
     def _match_edition(self, redacted_torrent, torrent_dict):
         return (
-                redacted_torrent.remaster_year == torrent_dict['remasterYear'] and
-                redacted_torrent.remaster_title == torrent_dict['remasterTitle'] and
-                redacted_torrent.remaster_record_label == torrent_dict['remasterRecordLabel'] and
-                redacted_torrent.remaster_catalog_number == torrent_dict['remasterCatalogueNumber']
+                redacted_torrent.remaster_year == int(torrent_dict['remasterYear']) and
+                redacted_torrent.remaster_title == html.unescape(torrent_dict['remasterTitle']) and
+                redacted_torrent.remaster_record_label == html.unescape(torrent_dict['remasterRecordLabel']) and
+                redacted_torrent.remaster_catalog_number == html.unescape(torrent_dict['remasterCatalogueNumber'])
         )
 
     def _can_transcode(self, redacted_torrent, group_dict):
