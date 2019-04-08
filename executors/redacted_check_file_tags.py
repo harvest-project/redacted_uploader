@@ -31,6 +31,8 @@ class RedactedCheckFileTags(RedactedStepExecutorMixin, StepExecutor):
 
     def generate_torrent_name(self):
         self.metadata.torrent_name = get_torrent_name_for_upload(self.metadata)
+        self.metadata.processing_steps.append('Generate torrent name "{}" from metadata.'.format(
+            self.metadata.torrent_name))
 
     def check_tags_for_file(self, audio_file):
         if self.metadata.format == MusicMetadata.FORMAT_MP3:

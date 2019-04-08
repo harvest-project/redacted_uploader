@@ -8,6 +8,7 @@ from plugins.redacted_uploader.executors.utils import RedactedStepExecutorMixin
 from torrents import add_torrent
 from upload_studio.step_executor import StepExecutor
 from upload_studio.upload_metadata import MusicMetadata
+from upload_studio.utils import get_stream_info, InconsistentStreamInfoException
 
 logger = get_logger(__name__)
 
@@ -21,37 +22,24 @@ class RedactedUploadTranscodeExecutor(RedactedStepExecutorMixin, StepExecutor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.sample_rate = None
-        self.channels = None
-        self.bits_per_sample = None
+        self.stream_info = None
         self.uploaded_torrent_id = None
 
     def detect_stream_info(self):
-        for audio_file in self.audio_files:
-            muta = audio_file.muta
-
-            is_heterogeneous = (
-                    (self.sample_rate and self.sample_rate != muta.info.sample_rate) or
-                    (self.channels and self.channels != muta.info.channels) or
-                    (self.bits_per_sample and self.bits_per_sample != muta.info.bits_per_sample)
-            )
-            if is_heterogeneous:
-                self.raise_error('Heterogeneous files are not supported.')
-            self.sample_rate = muta.info.sample_rate
-            self.channels = muta.info.channels
-            if hasattr(muta.info, 'bits_per_sample'):
-                self.bits_per_sample = muta.info.bits_per_sample
+        try:
+            self.stream_info = get_stream_info(f.muta for f in self.audio_files)
+        except InconsistentStreamInfoException as exc:
+            self.raise_error(str(exc))
 
         failed_detecting = (
-                not self.sample_rate or
-                not self.channels or
-                (not self.metadata.format_is_lossy and not self.bits_per_sample)
+                not self.stream_info.sample_rate or
+                not self.stream_info.channels or
+                (not self.metadata.format_is_lossy and not self.stream_info.bits_per_sample)
         )
         if failed_detecting:
             self.raise_error('Failed detecting files stream info.')
 
-        logger.info('{} detected stream settings {} / {} / {}.',
-                    self.project, self.sample_rate, self.channels, self.bits_per_sample)
+        logger.info('{} detected stream settings {}.', self.project, self.stream_info)
 
     def check_downsampling_rules(self):
         red_torrent = self.metadata.additional_data['source_red_torrent']
@@ -62,17 +50,18 @@ class RedactedUploadTranscodeExecutor(RedactedStepExecutorMixin, StepExecutor):
 
         logger.info('Detected downsampling. Verifying rules.')
 
+        bits_per_sample = self.stream_info.bits_per_sample
         is_inconsistent = (
-                downsample['dst_sample_rate'] != self.sample_rate or
-                (self.bits_per_sample and downsample['dst_bits_per_sample'] != self.bits_per_sample) or
-                downsample['dst_channels'] != self.channels
+                downsample['dst_sample_rate'] != self.stream_info.sample_rate or
+                (bits_per_sample and downsample['dst_bits_per_sample'] != bits_per_sample) or
+                downsample['dst_channels'] != self.stream_info.channels
         )
         if is_inconsistent:
             self.raise_error('Inconsistent downsample data and current file metadata.')
 
-        changed_sample_rate = downsample['src_sample_rate'] != self.sample_rate
-        changed_channels = downsample['src_channels'] != self.channels
-        changed_bits_per_sample = self.bits_per_sample and downsample['src_bits_per_sample'] != self.bits_per_sample
+        changed_sample_rate = downsample['src_sample_rate'] != self.stream_info.sample_rate
+        changed_channels = downsample['src_channels'] != self.stream_info.channels
+        changed_bits_per_sample = bits_per_sample and downsample['src_bits_per_sample'] != bits_per_sample
         is_redbook = (
                 downsample['dst_sample_rate'] == 44100 and
                 downsample['dst_bits_per_sample'] == 16 and
@@ -147,20 +136,20 @@ class RedactedUploadTranscodeExecutor(RedactedStepExecutorMixin, StepExecutor):
     def upload_torrent(self):
         logger.info('{} sending request for upload to Redacted.'.format(self.project))
 
+        self.metadata.processing_steps.append(
+            'Upload to Redacted group {} with year "{}", title "{}", record label "{}" and catalog number "{}".'.format(
+                self.metadata.additional_data['source_red_group']['id'],
+                self.metadata.edition_year,
+                self.metadata.edition_title,
+                self.metadata.edition_record_label,
+                self.metadata.edition_catalog_number
+            ),
+        )
+
         torrent_file = self._get_torrent_file()
 
-        if self.metadata.format == MusicMetadata.FORMAT_MP3:
-            release_desc = (
-                'Made with LAME 3.100 with -h using Harvest\'s Upload Studio from RED Torrent ID {0}.'
-                ' Resampling or bit depth change (if needed) was done using SoX.'
-            ).format(self.metadata.additional_data['source_red_torrent']['id'])
-        elif self.metadata.format == MusicMetadata.FORMAT_FLAC:
-            release_desc = (
-                'Made using Harvest\'s Upload Studio from RED Torrent ID {0}.'
-                ' Resampling or bit depth change (if needed) was done using SoX.'
-            ).format(self.metadata.additional_data['source_red_torrent']['id'])
-        else:
-            self.raise_error('Cannot create description for format {}.'.format(self.metadata.format))
+        steps_desc = '\n'.join('- {}'.format(s) for s in self.metadata.processing_steps)
+        release_desc = 'Made with using Harvest\'s Upload Studio. Creation process: \n\n{}'.format(steps_desc)
 
         payload = {
             'submit': 'true',

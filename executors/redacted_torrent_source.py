@@ -29,6 +29,8 @@ class RedactedTorrentSourceExecutor(RedactedStepExecutorMixin, StepExecutor):
         self.red_group = None
         self.red_torrent = None
         self.source_path = None
+        self.num_files = None
+        self.num_audio_files = None
 
     def fetch_torrent(self):
         if not self.project.source_torrent:
@@ -71,19 +73,21 @@ class RedactedTorrentSourceExecutor(RedactedStepExecutorMixin, StepExecutor):
         else:
             self.raise_error('Unknown source path type.')
 
-        num_audio_files = 0
+        self.num_files = 0
+        self.num_audio_files = 0
         audio_ext = '.' + self.red_torrent['format'].lower()
         for src_file, dst_file in src_dst_files:
             os.makedirs(os.path.dirname(dst_file), exist_ok=True)
             shutil.copy2(src_file, dst_file)
 
+            self.num_files += 1
             if src_file.lower().endswith(audio_ext):
-                num_audio_files += 1
+                self.num_audio_files += 1
 
-        logger.debug('{} discovered {} source audio files.', self.project, num_audio_files)
-        if num_audio_files == 0:
+        logger.debug('{} discovered {} source audio files.', self.project, self.num_audio_files)
+        if self.num_audio_files == 0:
             self.raise_error('No audio files discovered in source directory {}.'.format(download_path))
-        elif num_audio_files == 1:
+        elif self.num_audio_files == 1:
             allowed_types = {RedactedTorrentGroup.RELEASE_TYPE_SINGLE, RedactedTorrentGroup.RELEASE_TYPE_MIXTAPE}
             if self.red_group['releaseType'] not in allowed_types:
                 self.add_warning('Single audio file torrent with a type that is not single or mixtape.')
@@ -104,7 +108,19 @@ class RedactedTorrentSourceExecutor(RedactedStepExecutorMixin, StepExecutor):
             additional_data={
                 'source_red_group': self.red_group,
                 'source_red_torrent': self.red_torrent,
-            }
+            },
+            processing_steps=[
+                'Copy files from Redacted torrent {} in group {}. Torrent is {}/{} from {}.'
+                ' Found {} audio files out of {} total files.'.format(
+                    self.red_torrent['id'],
+                    self.red_group['id'],
+                    self.red_torrent['encoding'],
+                    self.red_torrent['format'],
+                    self.red_torrent['media'],
+                    self.num_audio_files,
+                    self.num_files
+                ),
+            ]
         )
 
     def handle_run(self):
