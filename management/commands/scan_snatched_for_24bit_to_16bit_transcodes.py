@@ -25,9 +25,10 @@ class Command(BaseCommand):
                 return False
         return True
 
-    def _check_torrent(self, torrent):
+    def _check_torrent(self, progress, torrent):
         redacted_torrent = torrent.torrent_info.redacted_torrent
-        print('Checking {}: {} - {}'.format(
+        print('{} checking {}: {} - {}'.format(
+            progress,
             torrent.torrent_info.redacted_torrent.id,
             get_joined_artists(redacted_torrent.torrent_group.music_info),
             redacted_torrent.torrent_group.name,
@@ -66,5 +67,8 @@ class Command(BaseCommand):
             torrent_info__redacted_torrent__encoding=RedactedTorrent.ENCODING_24BIT_LOSSLESS,
         ))
         print('Found {} eligible torrents.'.format(len(eligible_torrents)))
-        for torrent in eligible_torrents:
-            self._check_torrent(torrent)
+        for i, torrent in enumerate(eligible_torrents):
+            self._check_torrent(
+                '{}/{}'.format(i + 1, len(eligible_torrents)),
+                torrent,
+            )
