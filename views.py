@@ -72,6 +72,7 @@ class TranscodeTorrent(CORSBrowserExtensionView, APIView):
         torrent_group = torrent_info.redacted_torrent.torrent_group
         project = Project.objects.create(
             media_type=Project.MEDIA_TYPE_MUSIC,
+            project_type='redacted_transcode_{}'.format(transcode_type),
             name='{} - {} ({})'.format(
                 get_shorter_joined_artists(torrent_group.music_info, torrent_group.name),
                 torrent_group.name,
