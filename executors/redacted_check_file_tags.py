@@ -7,25 +7,8 @@ import mutagen.flac
 from Harvest.path_utils import list_rel_files
 from plugins.redacted_uploader.executors.utils import RedactedStepExecutorMixin, shorten_filename_if_necessary
 from plugins.redacted_uploader.torrent_name import get_torrent_name_for_upload
+from upload_studio.audio_utils import extract_track_disc_number
 from upload_studio.step_executor import StepExecutor
-from upload_studio.upload_metadata import MusicMetadata
-
-
-def _try_parse(value):
-    try:
-        return int(value)
-    except ValueError:
-        return value
-
-
-def _extract_numnber_from_tag_value(value):
-    if isinstance(value, list):
-        value = value[0]
-    if isinstance(value, int):
-        return value
-    if not isinstance(value, str):
-        raise ValueError()
-    return _try_parse(value.split('/')[0])
 
 
 class RedactedCheckFileTags(RedactedStepExecutorMixin, StepExecutor):
@@ -38,37 +21,14 @@ class RedactedCheckFileTags(RedactedStepExecutorMixin, StepExecutor):
             self.metadata.torrent_name))
 
     def check_tags_for_file(self, audio_file):
-        if self.metadata.format == MusicMetadata.FORMAT_MP3:
-            tags = mutagen.easyid3.EasyID3(audio_file.file)
-        elif self.metadata.format == MusicMetadata.FORMAT_FLAC:
-            tags = mutagen.flac.FLAC(audio_file.file)
-        else:
-            self.raise_error('No idea how to read tags for format {}'.format(self.metadata.format))
+        audio_file.disc, audio_file.track = extract_track_disc_number(audio_file.muta)
 
-        if not tags.get('artist'):
+        if not audio_file.muta.get('artist'):
             self.raise_error('Missing artist tag on {0}'.format(audio_file.file))
-        if not tags.get('album'):
+        if not audio_file.muta.get('album'):
             self.raise_error('Missing album tag on {0}'.format(audio_file.file))
-        if not tags.get('title'):
+        if not audio_file.muta.get('title'):
             self.raise_error('Missing title tag on {0}'.format(audio_file.file))
-
-        disc_src = tags.get('discnumber') or tags.get('disc')
-        if disc_src is None:
-            audio_file.disc = 1
-        else:
-            try:
-                audio_file.disc = _extract_numnber_from_tag_value(disc_src)
-            except ValueError:
-                self.raise_error('Unable to read disc_src {}.'.format(disc_src))
-
-        track_src = tags.get('tracknumber') or tags.get('track')
-        if track_src is None:
-            self.raise_error('Missing track tag on {0}'.format(audio_file.file))
-        else:
-            try:
-                audio_file.track = _extract_numnber_from_tag_value(track_src)
-            except ValueError:
-                self.raise_error('Unable read track_src {}.'.format(track_src))
 
     def check_tags(self):
         for audio_file in self.audio_files:

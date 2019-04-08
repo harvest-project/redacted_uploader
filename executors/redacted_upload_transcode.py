@@ -8,7 +8,7 @@ from plugins.redacted_uploader.executors.utils import RedactedStepExecutorMixin
 from torrents import add_torrent
 from upload_studio.step_executor import StepExecutor
 from upload_studio.upload_metadata import MusicMetadata
-from upload_studio.utils import get_stream_info, InconsistentStreamInfoException
+from upload_studio.audio_utils import InconsistentStreamInfoException, get_stream_info
 
 logger = get_logger(__name__)
 

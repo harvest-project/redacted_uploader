@@ -16,7 +16,7 @@ class RedactedStepExecutorMixin:
     class FileInfo:
         def __init__(self, file):
             self.file = file
-            self.muta = mutagen.File(self.file)
+            self.muta = mutagen.File(self.file, easy=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
