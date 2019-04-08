@@ -1,3 +1,6 @@
+import os
+from itertools import groupby
+
 import mutagen.easyid3
 import mutagen.flac
 
@@ -76,20 +79,24 @@ class RedactedCheckFileTags(RedactedStepExecutorMixin, StepExecutor):
             shorten_filename_if_necessary(self.metadata.torrent_name, self.step.data_path, rel_path)
 
     def check_track_numbers_sort_order(self):
-        # Reverse tags to ensure same track/disc get inverted after stable sort
-        by_tags = list(reversed(self.audio_files))
-        by_filenames = list(self.audio_files)
+        for dir_path, dir_files in groupby(self.audio_files, lambda f: os.path.dirname(f.file)):
+            # Reverse tags to ensure same track/disc get inverted after stable sort
+            by_tags = list(reversed(list(dir_files)))
+            by_filenames = list(dir_files)
 
-        by_tags.sort(key=lambda a: (a.track, a.disc))
-        by_filenames.sort(key=lambda a: a.file)
+            by_tags.sort(key=lambda a: (a.track, a.disc))
+            by_filenames.sort(key=lambda a: a.file)
 
-        if by_tags != by_filenames:
-            tags_sort_str = '\n'.join(a.file for a in by_tags)
-            self.add_warning(
-                'Files do not sort properly by tags. Please check track/disc tags and filenames.\n'
-                'Tags sort:\n'
-                '{}'.format(tags_sort_str),
-            )
+            if by_tags != by_filenames:
+                tags_sort_str = '\n'.join(os.path.relpath(a.file, self.step.data_path) for a in by_tags)
+                self.add_warning(
+                    'Files in {} do not sort properly by tags. Please check track/disc tags and filenames.\n'
+                    'Tags sort:\n'
+                    '{}'.format(
+                        dir_path,
+                        tags_sort_str,
+                    ),
+                )
 
     def handle_run(self):
         self.copy_prev_step_files()
