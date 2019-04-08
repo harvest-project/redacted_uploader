@@ -1,8 +1,5 @@
 import os
 
-import mutagen
-
-from Harvest.path_utils import list_abs_files
 from Harvest.utils import get_logger
 from plugins.redacted.client import RedactedClient
 from plugins.redacted.tracker import RedactedTrackerPlugin
@@ -13,25 +10,11 @@ logger = get_logger(__name__)
 
 
 class RedactedStepExecutorMixin:
-    class FileInfo:
-        def __init__(self, file):
-            self.file = file
-            self.muta = mutagen.File(self.file, easy=True)
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.client = RedactedClient()
         self.tracker = TrackerRegistry.get_plugin(RedactedTrackerPlugin.name, 'redacted_uploader_step')
         self.realm = Realm.objects.get(name=self.tracker.name)
-        self.audio_files = None
-
-    def discover_audio_files(self):
-        self.audio_files = []
-        audio_ext = '.' + self.metadata.format.lower()
-        for file in list_abs_files(self.step.data_path):
-            if not file.lower().endswith(audio_ext):
-                continue
-            self.audio_files.append(self.FileInfo(file))
 
 
 def shorten_filename_if_necessary(torrent_name, root, rel_path):

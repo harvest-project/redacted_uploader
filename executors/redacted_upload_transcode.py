@@ -6,40 +6,22 @@ from Harvest.utils import get_logger
 from plugins.redacted.exceptions import RedactedUploadException, RedactedException
 from plugins.redacted_uploader.executors.utils import RedactedStepExecutorMixin
 from torrents import add_torrent
+from upload_studio.audio_utils import AudioDiscoveryStepMixin
 from upload_studio.step_executor import StepExecutor
 from upload_studio.upload_metadata import MusicMetadata
-from upload_studio.audio_utils import InconsistentStreamInfoException, get_stream_info
 
 logger = get_logger(__name__)
 
 PRE_EMPHASIS_TERMS = {'pre-emphasized', 'pre-emphasis', 'preemphasized', 'pre-emphasis'}
 
 
-class RedactedUploadTranscodeExecutor(RedactedStepExecutorMixin, StepExecutor):
+class RedactedUploadTranscodeExecutor(AudioDiscoveryStepMixin, RedactedStepExecutorMixin, StepExecutor):
     name = 'redacted_upload_transcode'
     description = 'Upload a transcoded torrent to Redacted.'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self.stream_info = None
         self.uploaded_torrent_id = None
-
-    def detect_stream_info(self):
-        try:
-            self.stream_info = get_stream_info(f.muta for f in self.audio_files)
-        except InconsistentStreamInfoException as exc:
-            self.raise_error(str(exc))
-
-        failed_detecting = (
-                not self.stream_info.sample_rate or
-                not self.stream_info.channels or
-                (not self.metadata.format_is_lossy and not self.stream_info.bits_per_sample)
-        )
-        if failed_detecting:
-            self.raise_error('Failed detecting files stream info.')
-
-        logger.info('{} detected stream settings {}.', self.project, self.stream_info)
 
     def check_downsampling_rules(self):
         red_torrent = self.metadata.additional_data['source_red_torrent']
@@ -211,7 +193,6 @@ class RedactedUploadTranscodeExecutor(RedactedStepExecutorMixin, StepExecutor):
     def handle_run(self):
         self.copy_prev_step_files()
         self.discover_audio_files()
-        self.detect_stream_info()
         self.check_downsampling_rules()
         self.check_metadata()
         self.detect_duplicates()
