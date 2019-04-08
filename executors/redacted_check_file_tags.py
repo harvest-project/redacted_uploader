@@ -81,8 +81,8 @@ class RedactedCheckFileTags(RedactedStepExecutorMixin, StepExecutor):
     def check_track_numbers_sort_order(self):
         for dir_path, dir_files in groupby(self.audio_files, lambda f: os.path.dirname(f.file)):
             # Reverse tags to ensure same track/disc get inverted after stable sort
-            by_tags = list(reversed(list(dir_files)))
             by_filenames = list(dir_files)
+            by_tags = list(reversed(by_filenames))
 
             by_tags.sort(key=lambda a: (a.track, a.disc))
             by_filenames.sort(key=lambda a: a.file)
