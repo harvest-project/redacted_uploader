@@ -119,6 +119,6 @@ class TranscodeTorrent(CORSBrowserExtensionView, APIView):
 
         # If the torrent is complete, launch it. Otherwise the torrent_finished receiver will start it when received.
         if torrent.progress == 1:
-            transaction.on_commit(lambda: project_run_all(project.id))
+            project_run_all.delay(project.id)
 
         return Response(ProjectDeepSerializer(project).data)
