@@ -15,6 +15,7 @@ from upload_studio.models import Project
 class Command(BaseCommand):
     def _match_edition(self, redacted_torrent, torrent_dict):
         return (
+                redacted_torrent.media == html.unescape(torrent_dict['media']) and
                 redacted_torrent.remaster_year == int(torrent_dict['remasterYear']) and
                 redacted_torrent.remaster_title == html.unescape(torrent_dict['remasterTitle']) and
                 redacted_torrent.remaster_record_label == html.unescape(torrent_dict['remasterRecordLabel']) and
