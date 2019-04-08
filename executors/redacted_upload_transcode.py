@@ -96,7 +96,7 @@ class RedactedUploadTranscodeExecutor(RedactedStepExecutorMixin, StepExecutor):
                             any(term in red_torrent['description'].lower() for term in PRE_EMPHASIS_TERMS))
         if is_preemphasized:
             self.add_warning('Source torrent looks like it might be pre-emphasized. De-emphasizing is not supported.'
-                             'Please check the source torrent and do it manually if needed.')
+                             ' Please check the source torrent and do it manually if needed.')
 
         if not self.metadata.edition_year:
             self.add_warning('Metadata has empty year.')
