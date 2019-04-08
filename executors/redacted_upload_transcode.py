@@ -131,7 +131,7 @@ class RedactedUploadTranscodeExecutor(AudioDiscoveryStepMixin, RedactedStepExecu
         torrent_file = self._get_torrent_file()
 
         steps_desc = '\n'.join('- {}'.format(s) for s in self.metadata.processing_steps)
-        release_desc = 'Made with using Harvest\'s Upload Studio. Creation process: \n\n{}'.format(steps_desc)
+        release_desc = 'Made with Harvest\'s Upload Studio. Creation process: \n\n{}'.format(steps_desc)
 
         payload = {
             'submit': 'true',
