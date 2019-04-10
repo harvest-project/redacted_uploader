@@ -88,7 +88,7 @@ class RedactedUploadTranscodeExecutor(AudioDiscoveryStepMixin, RedactedStepExecu
                 self.metadata.edition_catalog_number
         )
         if not has_any_edition_information:
-            self.add_warning('Metadata has empty title/label/catalog number.')
+            self.add_warning('Metadata has empty title, label and catalog number.')
 
     def detect_duplicates(self):
         red_group = self.client.get_torrent_group(self.metadata.additional_data['source_red_group']['id'])

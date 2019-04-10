@@ -1,3 +1,4 @@
+import html
 import json
 import os
 import shutil
@@ -49,6 +50,11 @@ class RedactedTorrentSourceExecutor(RedactedStepExecutorMixin, StepExecutor):
         self.red_group = red_data['group']
         self.red_torrent = red_data['torrent']
 
+        if not self.red_torrent['remasterYear']:
+            self.add_warning(
+                'Source torrent has year {}. Probably unknown/confirmed release.'.format(
+                    self.red_torrent['remasterYear']))
+
     def check_source_warnings(self):
         if self.red_torrent['scene']:
             self.add_warning('Attention: source torrent is scene.')
@@ -95,11 +101,11 @@ class RedactedTorrentSourceExecutor(RedactedStepExecutorMixin, StepExecutor):
     def init_metadata(self):
         logger.debug('Project {} initializing metadata from Redacted torrent.', self.project)
         self.metadata = MusicMetadata(
-            title=self.red_group['name'],
+            title=html.unescape(self.red_group['name']),
             edition_year=self.red_torrent['remasterYear'],
-            edition_title=self.red_torrent['remasterTitle'],
-            edition_record_label=self.red_torrent['remasterRecordLabel'],
-            edition_catalog_number=self.red_torrent['remasterCatalogueNumber'],
+            edition_title=html.unescape(self.red_torrent['remasterTitle']),
+            edition_record_label=html.unescape(self.red_torrent['remasterRecordLabel']),
+            edition_catalog_number=html.unescape(self.red_torrent['remasterCatalogueNumber']),
 
             media=self.red_torrent['media'],
             format=self.red_torrent['format'],
