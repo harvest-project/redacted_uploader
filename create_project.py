@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import status
 from rest_framework.exceptions import APIException
 
@@ -28,6 +29,7 @@ TRANSCODE_TYPES = {
 }
 
 
+@transaction.atomic
 def create_transcode_project(tracker_id, transcode_type):
     if transcode_type not in TRANSCODE_TYPES:
         raise APIException(
