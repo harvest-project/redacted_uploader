@@ -19,7 +19,7 @@ class RedactedStepExecutorMixin:
 
 def shorten_filename_if_necessary(torrent_name, root, rel_path):
     len_debt = len(rel_path) + len(torrent_name) + 1 - 180  # 1 for the /
-    if len_debt < 0:
+    if len_debt <= 0:
         return
 
     filename = os.path.basename(rel_path)
@@ -30,7 +30,7 @@ def shorten_filename_if_necessary(torrent_name, root, rel_path):
         raise Exception('Shortening the filename will make it less than 40 chars - {0}'.format(new_len))
 
     filename_root, filename_ext = os.path.splitext(filename)
-    new_filename = filename_root[:-len_debt] + filename_ext
+    new_filename = filename_root[:-(len_debt + 3)] + '...' + filename_ext
     new_rel_path = os.path.join(dirname, new_filename)
 
     logger.info('Shortening {} to {}.', rel_path, new_rel_path)
