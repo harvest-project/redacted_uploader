@@ -112,6 +112,7 @@ class Command(BaseCommand):
             self._scan_torrents(
                 torrents=list(Torrent.objects.filter(
                     realm=self.realm,
+                    progress=1,
                     torrent_info__redacted_torrent__encoding=RedactedTorrent.ENCODING_24BIT_LOSSLESS,
                     torrent_info__redacted_torrent__remaster_year__gt=0,
                 )),
@@ -124,6 +125,7 @@ class Command(BaseCommand):
             self._scan_torrents(
                 torrents=list(Torrent.objects.filter(
                     realm=self.realm,
+                    progress=1,
                     torrent_info__redacted_torrent__format=RedactedTorrent.FORMAT_FLAC,
                     torrent_info__redacted_torrent__remaster_year__gt=0,
                 )),
@@ -136,6 +138,7 @@ class Command(BaseCommand):
             self._scan_torrents(
                 torrents=list(Torrent.objects.filter(
                     realm=self.realm,
+                    progress=1,
                     torrent_info__redacted_torrent__format=RedactedTorrent.FORMAT_FLAC,
                     torrent_info__redacted_torrent__remaster_year__gt=0,
                 )),

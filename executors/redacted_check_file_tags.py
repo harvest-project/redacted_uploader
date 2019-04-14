@@ -18,7 +18,11 @@ class RedactedCheckFileTags(AudioDiscoveryStepMixin, RedactedStepExecutorMixin, 
             self.metadata.torrent_name))
 
     def check_tags_for_file(self, audio_file):
-        if not audio_file.muta.get('artist'):
+        artist = audio_file.muta.get('artist')
+        album_artist = audio_file.muta.get('albumartist')
+        performer = audio_file.muta.get('performer')
+
+        if not artist and not album_artist and not performer:
             self.raise_error('Missing artist tag on {0}'.format(audio_file.rel_path))
         if not audio_file.muta.get('album'):
             self.raise_error('Missing album tag on {0}'.format(audio_file.rel_path))
